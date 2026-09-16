@@ -86,7 +86,7 @@ const initCheckout = async () => {
   error.value = ''
   
   try {
-    const response = await axios.post('http://localhost:3000/api/checkout', {
+    const response = await axios.post('https://test-payment-black.vercel.app/api/checkout', {
       items: cartStore.items
     })
     
@@ -119,7 +119,7 @@ const verifyPayment = async () => {
   verifying.value = true
   
   try {
-    const response = await axios.post('http://localhost:3000/api/verify-payment', {
+    const response = await axios.post('https://test-payment-black.vercel.app/api/verify-payment', {
       md5: md5Hash.value
     })
     
