@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const { BakongKHQR, khqrData, IndividualInfo } = require('bakong-khqr');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -76,7 +76,7 @@ app.post('/api/checkout', (req, res) => {
           merchantCityAlternateLanguage: "Phnom Penh"
       },
       merchantAlternateLanguagePreference: "km",
-      billNumber: uuidv4().replace(/-/g, '').substring(0, 20),
+      billNumber: crypto.randomUUID().replace(/-/g, '').substring(0, 20),
       expirationTimestamp: Date.now() + (15 * 60 * 1000) // 15 minutes to expire (required for fixed amount Dynamic QR)
     };
 
