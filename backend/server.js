@@ -1,3 +1,4 @@
+try {
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -142,3 +143,10 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 }
 
 module.exports = app;
+
+} catch (err) {
+  const express = require('express');
+  const app = express();
+  app.all('*', (req, res) => res.status(500).send(err.stack || err.message));
+  module.exports = app;
+}
