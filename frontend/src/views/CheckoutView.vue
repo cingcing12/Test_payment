@@ -94,9 +94,12 @@ const initCheckout = async () => {
     md5Hash.value = response.data.md5
     total.value = response.data.total
 
-    // Start auto-polling every 3 seconds
+    // Poll for payment status every 10 seconds to save API quota
     if (pollInterval) clearInterval(pollInterval)
-    pollInterval = setInterval(verifyPayment, 3000)
+    pollInterval = setInterval(async () => {
+      if (verifying.value) return
+      await verifyPayment()
+    }, 10000)
   } catch (err) {
     error.value = err.response?.data?.error || 'Failed to generate KHQR.'
     console.error(err)
@@ -128,10 +131,12 @@ const verifyPayment = async () => {
       success.value = true
       cartStore.clearCart()
       if (pollInterval) clearInterval(pollInterval)
+    } else {
+      verifyError.value = response.data.responseMessage || 'Payment not found yet.'
     }
   } catch (err) {
-    // Only log polling errors to console, don't show on UI to prevent flashing
-    console.error('Polling verification:', err.response?.data?.error || 'Verification failed.')
+    verifyError.value = err.response?.data?.error || 'Verification request failed.'
+    console.error('Polling verification:', err)
   } finally {
     verifying.value = false
   }
