@@ -13,8 +13,26 @@
       </div>
 
       <div v-else class="payment-section">
-        <h2>Checkout</h2>
-        <p class="subtitle">Scan the Bakong KHQR below to pay.</p>
+        <div v-if="step === 1" class="email-step fade-in">
+          <h2>Checkout Details</h2>
+          <p class="subtitle">Please enter your email to receive a receipt.</p>
+          <div class="form-group">
+            <input 
+              type="email" 
+              v-model="userEmail" 
+              placeholder="your@email.com" 
+              class="email-input" 
+              @keyup.enter="goToPayment"
+            />
+          </div>
+          <button @click="goToPayment" class="btn btn-primary btn-block mt-4" :disabled="!isValidEmail">
+            Continue to Payment
+          </button>
+        </div>
+
+        <div v-else class="qr-step fade-in">
+          <h2>Scan to Pay</h2>
+          <p class="subtitle">Scan the Bakong KHQR below to pay.</p>
 
         <div v-if="loading" class="loading">
           Generating KHQR...
@@ -49,13 +67,14 @@
             <p v-if="verifyError" class="verify-error">{{ verifyError }}</p>
           </div>
         </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import QrcodeVue from 'qrcode.vue'
 import { useCartStore } from '../store/cart'
@@ -63,6 +82,20 @@ import { useRouter } from 'vue-router'
 
 const cartStore = useCartStore()
 const router = useRouter()
+
+const step = ref(1)
+const userEmail = ref('')
+
+const isValidEmail = computed(() => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail.value)
+})
+
+const goToPayment = () => {
+  if (isValidEmail.value) {
+    step.value = 2
+    initCheckout()
+  }
+}
 
 const loading = ref(true)
 const error = ref('')
@@ -109,7 +142,7 @@ const initCheckout = async () => {
 }
 
 onMounted(() => {
-  initCheckout()
+  // Wait for user to input email first
 })
 
 onUnmounted(() => {
@@ -123,7 +156,9 @@ const verifyPayment = async () => {
   
   try {
     const response = await axios.post('https://test-payment-black.vercel.app/api/verify-payment', {
-      md5: md5Hash.value
+      md5: md5Hash.value,
+      email: userEmail.value,
+      total: total.value
     })
     
     // Usually responseCode 0 means success in Bakong API
@@ -149,6 +184,23 @@ const verifyPayment = async () => {
   justify-content: center;
   align-items: center;
   min-height: 60vh;
+}
+
+.email-input {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.email-input:focus {
+  border-color: var(--primary-color);
 }
 
 .checkout-container {

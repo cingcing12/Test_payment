@@ -5,7 +5,15 @@ const cors = require('cors');
 const axios = require('axios');
 const { BakongKHQR, khqrData, IndividualInfo } = require('bakong-khqr');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -107,7 +115,7 @@ app.post('/api/checkout', (req, res) => {
 
 app.post('/api/verify-payment', async (req, res) => {
   try {
-    const { md5 } = req.body;
+    const { md5, email, total } = req.body;
     if (!md5) {
       return res.status(400).json({ error: 'MD5 hash is required' });
     }
@@ -125,6 +133,26 @@ app.post('/api/verify-payment', async (req, res) => {
     });
 
     // response.data usually contains { responseCode: 0, responseMessage: "Success", data: { ... } }
+    
+    if (response.data.responseCode === 0 && email) {
+      try {
+        await transporter.sendMail({
+          from: `"VueShop" <${process.env.EMAIL_USER}>`,
+          to: email,
+          subject: 'Payment Receipt - VueShop',
+          html: `
+            <h2>Payment Successful!</h2>
+            <p>Thank you for shopping at VueShop.</p>
+            <p>Your payment of <strong>$${total || '0.00'}</strong> was received successfully.</p>
+            <br/>
+            <p>Order Reference: ${md5}</p>
+          `
+        });
+      } catch (emailError) {
+        console.error('Failed to send email:', emailError);
+      }
+    }
+
     res.json(response.data);
   } catch (error) {
     console.error('Verify error:', error.response?.data || error.message);
